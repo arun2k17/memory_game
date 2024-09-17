@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ta">
+<head>
+    <meta charset="UTF-8">
+    <title>தமிழ் எழுத்துகள் நினைவுப் பாட்டை</title>
+    <style>
+        body {
+            font-family: 'Arial, sans-serif';
+            background-color: #f8f0e3;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #5d3a00;
+            text-align: center;
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        #gameOptions {
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+        }
+        #gameOptions label, #gameOptions select, #gameOptions button {
+            margin: 5px;
+            font-size: 1em;
+        }
+        #gameBoard {
+            display: grid;
+            gap: 10px;
+            justify-content: center;
+        }
+        .tile {
+            background-color: #fff8e1;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5d3a00;
+            cursor: pointer;
+            position: relative;
+            perspective: 1000px;
+        }
+        .tile .inner {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+        }
+        .tile.flipped .inner {
+            transform: rotateY(180deg);
+        }
+        .tile .front, .tile .back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border: 2px solid #d7a15d;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .tile .back {
+            background-color: #ffd54f;
+            transform: rotateY(180deg);
+        }
+        .tile .front {
+            background-color: #fff8e1;
+        }
+        .congrats {
+            font-size: 2em;
+            color: #d32f2f;
+            margin-top: 20px;
+            text-align: center;
+        }
+        /* Simple flowery design */
+        body:before {
+            content: '';
+            position: fixed;
+            top: -50px;
+            left: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at center, #ffd54f 0%, rgba(255,213,79,0) 70%);
+            z-index: -1;
+        }
+        body:after {
+            content: '';
+            position: fixed;
+            bottom: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: radial-gradient(circle at center, #ffd54f 0%, rgba(255,213,79,0) 70%);
+            z-index: -1;
+        }
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5em;
+            }
+            #gameOptions label, #gameOptions select, #gameOptions button {
+                font-size: 0.9em;
+            }
+            .tile {
+                width: calc(100vw / 5 - 12px);
+                height: calc(100vw / 5 - 12px);
+            }
+            .tile .front, .tile .back {
+                font-size: 1.2em;
+            }
+            #gameBoard {
+                gap: 5px;
+            }
+        }
+        @media (min-width: 601px) and (max-width: 900px) {
+            .tile {
+                width: calc(100vw / 8 - 12px);
+                height: calc(100vw / 8 - 12px);
+            }
+            .tile .front, .tile .back {
+                font-size: 1.5em;
+            }
+        }
+        @media (min-width: 901px) {
+            .tile {
+                width: 80px;
+                height: 80px;
+            }
+            .tile .front, .tile .back {
+                font-size: 1.5em;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<h1>தமிழ் எழுத்துகள் நினைவுப் பாட்டை</h1>
+
+<div id="gameOptions">
+    <label for="gridSize">Grid Size:</label>
+    <select id="gridSize">
+        <option value="4">4 x 4</option>
+        <option value="6">6 x 6</option>
+        <option value="8">8 x 8</option>
+        <option value="10">10 x 10</option>
+        <option value="12">12 x 12</option>
+        <option value="14">14 x 14</option>
+        <option value="16">16 x 16</option>
+    </select>
+    <button onclick="startGame()">Start Game</button>
+</div>
+
+<div id="gameBoard"></div>
+
+<div id="congratsMessage" class="congrats"></div>
+
+<script>
+    const vowels = ['அ', 'ஆ', 'இ', 'ஈ', 'உ', 'ஊ', 'எ', 'ஏ', 'ஐ', 'ஒ', 'ஓ', 'ஔ'];
+    const consonants = ['க', 'ங', 'ச', 'ஞ', 'ட', 'ண', 'த', 'ந', 'ப', 'ம', 'ய', 'ர', 'ல', 'வ', 'ழ', 'ள', 'ற', 'ன'];
+    const specialCharacter = 'ஃ';
+
+    let tamilCharacters = [];
+
+    // Generate all 247 Tamil characters
+    function generateTamilCharacters() {
+        let characters = [];
+
+        // Add vowels
+        characters = characters.concat(vowels);
+
+        // Add consonants
+        characters = characters.concat(consonants);
+
+        // Add special character
+        characters.push(specialCharacter);
+
+        // Add consonant-vowel combinations
+        consonants.forEach(consonant => {
+            vowels.forEach(vowel => {
+                let combination = consonant + vowelSign(vowel);
+                characters.push(combination);
+            });
+        });
+
+        return characters;
+    }
+
+    // Function to get vowel signs for consonant combinations
+    function vowelSign(vowel) {
+        const signs = {
+            'அ': '',   // No sign
+            'ஆ': 'ா',
+            'இ': 'ி',
+            'ஈ': 'ீ',
+            'உ': 'ு',
+            'ஊ': 'ூ',
+            'எ': 'ெ',
+            'ஏ': 'ே',
+            'ஐ': 'ை',
+            'ஒ': 'ொ',
+            'ஓ': 'ோ',
+            'ஔ': 'ௌ'
+        };
+        return signs[vowel];
+    }
+
+    let gridSize;
+    let gameBoard = document.getElementById('gameBoard');
+    let firstTile = null;
+    let secondTile = null;
+    let lockBoard = false;
+    let matches = 0;
+
+    function startGame() {
+        gridSize = parseInt(document.getElementById('gridSize').value);
+        resetGame();
+        tamilCharacters = generateTamilCharacters();
+
+        // Calculate total tiles and adjust the character set accordingly
+        let totalTiles = gridSize * gridSize;
+        let pairsNeeded = totalTiles / 2;
+
+        // If there are more pairs needed than available characters, adjust grid size
+        if (pairsNeeded > tamilCharacters.length) {
+            alert('Selected grid size is too big for the available characters. Adjusting grid size.');
+            pairsNeeded = tamilCharacters.length;
+            totalTiles = pairsNeeded * 2;
+            gridSize = Math.floor(Math.sqrt(totalTiles));
+        }
+
+        let selectedCharacters = tamilCharacters.slice(0, pairsNeeded);
+        let tileValues = selectedCharacters.concat(selectedCharacters);
+        shuffleArray(tileValues);
+        createBoard(tileValues);
+    }
+
+    function resetGame() {
+        gameBoard.innerHTML = '';
+        document.getElementById('congratsMessage').textContent = '';
+        matches = 0;
+        firstTile = null;
+        secondTile = null;
+        lockBoard = false;
+    }
+
+    function createBoard(tileValues) {
+        gameBoard.style.gridTemplateColumns = `repeat(${gridSize}, 1fr)`;
+        tileValues.forEach(value => {
+            let tile = document.createElement('div');
+            tile.classList.add('tile');
+            tile.addEventListener('click', flipTile);
+            tile.innerHTML = `
+                <div class="inner">
+                    <div class="front">தமிழ்</div>
+                    <div class="back">${value}</div>
+                </div>
+            `;
+            tile.dataset.value = value;
+            gameBoard.appendChild(tile);
+        });
+    }
+
+    function flipTile() {
+        if (lockBoard) return;
+        if (this === firstTile) return;
+
+        this.classList.add('flipped');
+
+        if (!firstTile) {
+            firstTile = this;
+            return;
+        }
+
+        secondTile = this;
+        lockBoard = true;
+
+        checkForMatch();
+    }
+
+    function checkForMatch() {
+        let isMatch = firstTile.dataset.value === secondTile.dataset.value;
+
+        if (isMatch) {
+            disableTiles();
+            matches += 2;
+            if (matches === gameBoard.children.length) {
+                setTimeout(() => {
+                    document.getElementById('congratsMessage').textContent = 'வாழ்த்துக்கள்! நீங்கள் எல்லா எழுத்துகளையும் கண்டுபிடித்துவிட்டீர்கள்!';
+                }, 500);
+            }
+        } else {
+            unflipTiles();
+        }
+    }
+
+    function disableTiles() {
+        firstTile.removeEventListener('click', flipTile);
+        secondTile.removeEventListener('click', flipTile);
+        firstTile.style.visibility = 'hidden';
+        secondTile.style.visibility = 'hidden';
+        resetBoard();
+    }
+
+    function unflipTiles() {
+        setTimeout(() => {
+            firstTile.classList.remove('flipped');
+            secondTile.classList.remove('flipped');
+            resetBoard();
+        }, 1000);
+    }
+
+    function resetBoard() {
+        [firstTile, secondTile, lockBoard] = [null, null, false];
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            let j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // Future enhancement: Function to read aloud the letters
+    function readAloud(letter) {
+        // Placeholder for future implementation
+        // Example: Use SpeechSynthesis API to read the letter
+    }
+</script>
+
+</body>
+</html>
